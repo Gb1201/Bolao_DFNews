@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Users, Trophy, Settings, User, Shield, Calendar, BarChart2, PlusCircle, Flag } from "lucide-react";
+import { Users, Trophy, Settings, User, Shield, Calendar, BarChart2, PlusCircle, Zap, MapPin, Radio } from "lucide-react";
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 const participantes = [
@@ -14,10 +14,13 @@ const participantes = [
 ];
 
 const calcPontos = (p) => p.vitorias * 3 + p.empates;
+const classificados = [...participantes].sort((a, b) => calcPontos(b) - calcPontos(a));
 
-const classificados = [...participantes].sort(
-  (a, b) => calcPontos(b) - calcPontos(a)
-);
+function formatarData(dataStr) {
+  return new Date(dataStr + "T00:00").toLocaleDateString("pt-BR", {
+    day: "2-digit", month: "short", year: "numeric",
+  });
+}
 
 // ─── SectionTitle ─────────────────────────────────────────────────────────────
 function SectionTitle({ icon: Icon, label }) {
@@ -36,21 +39,9 @@ function SectionTitle({ icon: Icon, label }) {
 // ─── PodioCard ───────────────────────────────────────────────────────────────
 function PodioCard({ participante, posicao }) {
   const configs = {
-    1: {
-      order: "order-2", height: "h-36", pedestal: "bg-red-600",
-      glow: "shadow-[0_0_28px_4px_rgba(220,38,38,0.4)]", ring: "ring-4 ring-red-500",
-      nameSize: "text-lg", label: "1º", ptsColor: "text-red-400",
-    },
-    2: {
-      order: "order-1", height: "h-24", pedestal: "bg-zinc-600",
-      glow: "shadow-[0_0_14px_2px_rgba(113,113,122,0.3)]", ring: "ring-2 ring-zinc-400",
-      nameSize: "text-base", label: "2º", ptsColor: "text-zinc-400",
-    },
-    3: {
-      order: "order-3", height: "h-20", pedestal: "bg-amber-700",
-      glow: "shadow-[0_0_14px_2px_rgba(180,83,9,0.3)]", ring: "ring-2 ring-amber-600",
-      nameSize: "text-base", label: "3º", ptsColor: "text-amber-600",
-    },
+    1: { order: "order-2", height: "h-36", pedestal: "bg-red-600", glow: "shadow-[0_0_28px_4px_rgba(220,38,38,0.4)]", ring: "ring-4 ring-red-500", nameSize: "text-lg", label: "1º", ptsColor: "text-red-400" },
+    2: { order: "order-1", height: "h-24", pedestal: "bg-zinc-600", glow: "shadow-[0_0_14px_2px_rgba(113,113,122,0.3)]", ring: "ring-2 ring-zinc-400", nameSize: "text-base", label: "2º", ptsColor: "text-zinc-400" },
+    3: { order: "order-3", height: "h-20", pedestal: "bg-amber-700", glow: "shadow-[0_0_14px_2px_rgba(180,83,9,0.3)]", ring: "ring-2 ring-amber-600", nameSize: "text-base", label: "3º", ptsColor: "text-amber-600" },
   };
   const c = configs[posicao];
   return (
@@ -76,13 +67,9 @@ function TabelaRow({ participante, index }) {
   return (
     <tr className={`border-b border-zinc-800/60 transition-all duration-150 hover:bg-zinc-800/50 ${index % 2 === 0 ? "bg-zinc-900/30" : "bg-transparent"}`}>
       <td className="py-3 px-4 text-center">
-        <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${pos === 1 ? "bg-red-600 text-white" : pos === 2 ? "bg-zinc-600 text-white" : pos === 3 ? "bg-amber-700 text-white" : "text-zinc-500 font-medium"}`}>
-          {pos}
-        </span>
+        <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${pos === 1 ? "bg-red-600 text-white" : pos === 2 ? "bg-zinc-600 text-white" : pos === 3 ? "bg-amber-700 text-white" : "text-zinc-500"}`}>{pos}</span>
       </td>
-      <td className="py-3 px-4">
-        <span className={`font-semibold ${pos <= 3 ? "text-white" : "text-zinc-300"}`}>{participante.nome}</span>
-      </td>
+      <td className="py-3 px-4"><span className={`font-semibold ${pos <= 3 ? "text-white" : "text-zinc-300"}`}>{participante.nome}</span></td>
       <td className="py-3 px-4 text-center text-zinc-500 text-sm">{participante.jogos}</td>
       <td className="py-3 px-4 text-center text-green-400 font-semibold text-sm">{participante.vitorias}</td>
       <td className="py-3 px-4 text-center text-yellow-400 font-semibold text-sm">{participante.empates}</td>
@@ -93,7 +80,7 @@ function TabelaRow({ participante, index }) {
 }
 
 // ─── Home ────────────────────────────────────────────────────────────────────
-function Home() {
+function Home({ bolaoAtivo }) {
   const navigate = useNavigate();
 
   return (
@@ -102,46 +89,26 @@ function Home() {
       {/* ── HEADER ── */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur border-b border-zinc-800 shadow-xl shadow-black/50">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-
-          {/* Logo */}
           <div className="flex items-center gap-3 flex-shrink-0">
             <div className="w-9 h-9 rounded-lg bg-red-600 flex items-center justify-center shadow-md shadow-red-900/50">
               <Shield size={17} className="text-white" />
             </div>
             <div className="leading-tight">
               <p className="text-[10px] text-zinc-500 uppercase tracking-widest hidden sm:block">Sistema de</p>
-              <h1 className="text-white font-black text-base tracking-tight">
-                Bolão <span className="text-red-500">Mengão</span>
-              </h1>
+              <h1 className="text-white font-black text-base tracking-tight">Bolão <span className="text-red-500">Mengão</span></h1>
             </div>
           </div>
-
-          {/* Título central */}
           <div className="hidden md:flex items-center gap-2 border border-zinc-800 px-4 py-1.5 rounded-full">
             <Trophy size={13} className="text-red-500" />
-            <span className="text-xs font-semibold text-zinc-400 tracking-widest uppercase">
-              Classificação Geral
-            </span>
+            <span className="text-xs font-semibold text-zinc-400 tracking-widest uppercase">Classificação Geral</span>
           </div>
-
-          {/* Ações */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <a
-              href="/participantes"
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold
-                text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-600
-                px-3 py-1.5 rounded-full transition-all duration-200"
-            >
+            <a href="/participantes" className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-600 px-3 py-1.5 rounded-full transition-all duration-200">
               <Settings size={13} />
               Gerenciar Participantes
             </a>
-
-            {/* ── Botão de perfil com navegação ── */}
-            <button
-              onClick={() => navigate("/profile")}
-              className="w-9 h-9 rounded-full bg-zinc-900 hover:bg-red-600 flex items-center justify-center transition-all duration-200 border border-zinc-800 hover:border-red-500 hover:scale-105"
-            >
-              <User size={15} className="text-zinc-400 group-hover:text-white" />
+            <button onClick={() => navigate("/profile")} className="w-9 h-9 rounded-full bg-zinc-900 hover:bg-red-600 flex items-center justify-center transition-all duration-200 border border-zinc-800 hover:border-red-500 hover:scale-105">
+              <User size={15} className="text-zinc-400" />
             </button>
           </div>
         </div>
@@ -150,25 +117,64 @@ function Home() {
       {/* ── MAIN ── */}
       <main className="max-w-6xl mx-auto px-4 pt-24 pb-16 space-y-12">
 
-        {/* ── CARDS DO BOLÃO ── */}
+        {/* ── CARDS DE BOLÃO ── */}
         <section className="grid sm:grid-cols-2 gap-4">
-          <div className="group border border-red-600/30 bg-red-950/10 rounded-xl p-5 flex items-center gap-4 transition-all duration-300 hover:border-red-600/60 hover:bg-red-950/20 hover:shadow-lg hover:shadow-red-950/30">
-            <div className="w-10 h-10 rounded-lg bg-red-600/20 border border-red-600/30 flex items-center justify-center flex-shrink-0 group-hover:bg-red-600/30 transition-all duration-300">
-              <Flag size={18} className="text-red-400" />
+
+          {/* Card bolão ativo — só aparece quando há um bolão ativado */}
+          {bolaoAtivo ? (
+            <div className="border border-red-500/50 bg-red-950/15 rounded-xl p-5 flex items-center gap-4 shadow-lg shadow-red-950/20">
+              <div className="w-11 h-11 rounded-lg bg-red-600/20 border border-red-500/30 flex items-center justify-center flex-shrink-0">
+                <Radio size={19} className="text-red-400 animate-pulse" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="text-xs uppercase tracking-widest text-red-400 font-semibold">Bolão Ativo</p>
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                </div>
+                <p className="text-lg font-black text-white truncate">{bolaoAtivo.jogo}</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
+                  <span className="flex items-center gap-1 text-xs text-zinc-500">
+                    <Calendar size={10} />
+                    {formatarData(bolaoAtivo.data)} às {bolaoAtivo.horario}
+                  </span>
+                  <span className="flex items-center gap-1 text-xs text-zinc-500">
+                    <MapPin size={10} />
+                    {bolaoAtivo.estadio}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-zinc-500 font-semibold mb-0.5">Bolão Atual</p>
-              <p className="text-lg font-black text-white">Flamengo x Vasco</p>
+          ) : (
+            // Placeholder quando não há bolão ativo
+            <div className="border border-dashed border-zinc-800 rounded-xl p-5 flex items-center gap-4">
+              <div className="w-11 h-11 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center flex-shrink-0">
+                <Zap size={19} className="text-zinc-700" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-widest text-zinc-600 font-semibold mb-0.5">Bolão Ativo</p>
+                <p className="text-sm text-zinc-600">Nenhum bolão ativo</p>
+              </div>
             </div>
-          </div>
-          <div className="group border border-zinc-800 bg-zinc-900/20 rounded-xl p-5 flex items-center gap-4 transition-all duration-300 hover:border-zinc-700 hover:bg-zinc-900/40 hover:shadow-lg">
-            <div className="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center flex-shrink-0 group-hover:bg-zinc-700 transition-all duration-300">
-              <Calendar size={18} className="text-zinc-400" />
+          )}
+
+          {/* Próximo bolão + botão ativar */}
+          <div className="group border border-zinc-800 bg-zinc-900/20 rounded-xl p-5 flex items-center justify-between gap-4 transition-all duration-300 hover:border-zinc-700 hover:bg-zinc-900/40">
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center flex-shrink-0">
+                <Calendar size={19} className="text-zinc-400" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-widest text-zinc-500 font-semibold mb-0.5">Próximo Bolão</p>
+                <p className="text-lg font-black text-white">Flamengo x Palmeiras</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-zinc-500 font-semibold mb-0.5">Próximo Bolão</p>
-              <p className="text-lg font-black text-white">Flamengo x Palmeiras</p>
-            </div>
+            <button
+              onClick={() => navigate("/ativar-bolao")}
+              className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-red-950/50 border border-red-500/50 whitespace-nowrap"
+            >
+              <Zap size={13} />
+              Ativar
+            </button>
           </div>
         </section>
 
@@ -211,21 +217,11 @@ function Home() {
 
         {/* ── BOTÕES ── */}
         <section className="grid sm:grid-cols-2 gap-4">
-          <a
-            href="/cadastro-participante"
-            className="group flex items-center justify-center gap-2.5 bg-red-600 hover:bg-red-700
-              text-white font-bold text-sm py-3.5 px-6 rounded-xl transition-all duration-200
-              hover:shadow-lg hover:shadow-red-950/50 border border-red-500/50 hover:border-red-400"
-          >
+          <a href="/cadastro-participante" className="group flex items-center justify-center gap-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-3.5 px-6 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-red-950/50 border border-red-500/50 hover:border-red-400">
             <Users size={17} className="transition-transform duration-200 group-hover:scale-110" />
             Cadastrar Novo Participante
           </a>
-          <a
-            href="/cadastro-bolao"
-            className="group flex items-center justify-center gap-2.5 bg-zinc-800 hover:bg-zinc-700
-              text-white font-bold text-sm py-3.5 px-6 rounded-xl transition-all duration-200
-              hover:shadow-lg hover:shadow-black/40 border border-zinc-700 hover:border-zinc-500"
-          >
+          <a href="/cadastro-bolao" className="group flex items-center justify-center gap-2.5 bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-sm py-3.5 px-6 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-black/40 border border-zinc-700 hover:border-zinc-500">
             <PlusCircle size={17} className="transition-transform duration-200 group-hover:scale-110" />
             Cadastrar Novo Bolão
           </a>
@@ -233,7 +229,6 @@ function Home() {
 
       </main>
 
-      {/* ── FOOTER ── */}
       <footer className="border-t border-zinc-900 py-6 text-center text-xs text-zinc-700">
         Bolão Mengão &copy; {new Date().getFullYear()} — Nação Rubro-Negra
       </footer>
