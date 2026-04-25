@@ -1,259 +1,187 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Shield, Calendar, MapPin, Zap, XCircle, ArrowLeft,
-  CheckCircle, Radio, ChevronRight, Clock
+  CheckCircle, Radio
 } from "lucide-react";
 
-// ─── Mock de bolões ───────────────────────────────────────────────────────────
-const boloesMock = [
-  { id: 1, jogo: "Flamengo x Vasco",       data: "2026-04-05", horario: "16:00", estadio: "Maracanã" },
-  { id: 2, jogo: "Flamengo x Palmeiras",   data: "2026-04-12", horario: "18:30", estadio: "Maracanã" },
-  { id: 3, jogo: "Flamengo x Corinthians", data: "2026-04-19", horario: "21:00", estadio: "Neo Química Arena" },
-  { id: 4, jogo: "Flamengo x São Paulo",   data: "2026-04-26", horario: "17:00", estadio: "Maracanã" },
-  { id: 5, jogo: "Flamengo x Atlético",    data: "2026-05-03", horario: "20:00", estadio: "Arena MRV" },
-];
+// 🔥 API
+const API_URL = "http://localhost:8080/api/partidas";
 
 function formatarData(dataStr) {
-  return new Date(dataStr + "T00:00").toLocaleDateString("pt-BR", {
+  return new Date(dataStr).toLocaleDateString("pt-BR", {
     day: "2-digit", month: "short", year: "numeric",
   });
 }
 
-// ─── BolaoCard ───────────────────────────────────────────────────────────────
+// ─── Card ─────────────────────────────────────────────────────────────
 function BolaoCard({ bolao, selecionado, ativo, onClick }) {
-  const isAtivo      = ativo?.id === bolao.id;
+  const isAtivo = ativo?.id === bolao.id;
   const isSelecionado = !isAtivo && selecionado?.id === bolao.id;
 
   return (
     <button
-      type="button"
       onClick={onClick}
       disabled={isAtivo}
-      className={`
-        w-full text-left rounded-2xl border p-5 transition-all duration-200 outline-none
-        focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950
+      className={`w-full text-left rounded-2xl border p-5
         ${isAtivo
-          ? "border-red-500/60 bg-red-950/25 cursor-not-allowed"
+          ? "border-red-500 bg-red-950/20"
           : isSelecionado
-          ? "border-red-500 bg-zinc-800/60 shadow-lg shadow-red-950/20"
-          : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-600 hover:bg-zinc-800/40 cursor-pointer"
-        }
-      `}
-      aria-pressed={isSelecionado || isAtivo}
-      aria-label={`Selecionar bolão: ${bolao.jogo}`}
+          ? "border-red-500 bg-zinc-800"
+          : "border-zinc-800 bg-zinc-900 hover:border-zinc-600"
+        }`}
     >
       <div className="flex items-center gap-4">
 
-        {/* Ícone / status */}
-        <div className={`
-          w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200
-          ${isAtivo
-            ? "bg-red-600/20 border border-red-500/30"
-            : isSelecionado
-            ? "bg-red-600/20 border border-red-500/30"
-            : "bg-zinc-800 border border-zinc-700"
-          }
-        `}>
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-zinc-800">
           {isAtivo
             ? <Radio size={20} className="text-red-400 animate-pulse" />
             : <Zap size={20} className={isSelecionado ? "text-red-400" : "text-zinc-500"} />
           }
         </div>
 
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <p className={`font-black text-base leading-tight ${isSelecionado || isAtivo ? "text-white" : "text-zinc-200"}`}>
-              {bolao.jogo}
-            </p>
-            {isAtivo && (
-              <span className="inline-flex items-center gap-1 bg-red-600 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full flex-shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                Ativo
-              </span>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
-            <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+        <div className="flex-1">
+          <p className="font-black text-white">
+            {bolao.timeCasa} × {bolao.timeFora}
+          </p>
+
+          <div className="flex gap-4 text-xs text-zinc-500 mt-1">
+            <span className="flex items-center gap-1">
               <Calendar size={11} />
-              {formatarData(bolao.data)} às {bolao.horario}
+              {formatarData(bolao.dataHora)}
             </span>
-            <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+
+            <span className="flex items-center gap-1">
               <MapPin size={11} />
-              {bolao.estadio}
+              {bolao.estadio || "—"}
             </span>
           </div>
         </div>
 
-        {/* Check */}
-        <div className="flex-shrink-0 ml-2">
-          {isAtivo ? (
-            <div className="w-6 h-6 rounded-full border-2 border-red-500/50 bg-red-600/20 flex items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
-            </div>
-          ) : isSelecionado ? (
-            <div className="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center shadow-sm shadow-red-950/30">
-              <CheckCircle size={14} className="text-white" />
-            </div>
-          ) : (
-            <div className="w-6 h-6 rounded-full border border-zinc-700" />
-          )}
-        </div>
-
+        {isSelecionado && (
+          <CheckCircle size={18} className="text-red-500" />
+        )}
       </div>
     </button>
   );
 }
 
-// ─── AtivarBolao ─────────────────────────────────────────────────────────────
-function AtivarBolao({ bolaoAtivo, setBolaoAtivo }) {
-  const navigate               = useNavigate();
+// ─── Tela ─────────────────────────────────────────────────────────────
+function AtivarBolao() {
+  const navigate = useNavigate();
+
+  const [partidas, setPartidas] = useState([]);
   const [selecionado, setSelecionado] = useState(null);
-  const [confirmando, setConfirmando] = useState(false);
+  const [ativo, setAtivo] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // 🔥 BUSCAR PARTIDAS
+  useEffect(() => {
+    fetch(API_URL)
+      .then(res => res.json())
+      .then(data => setPartidas(data))
+      .catch(err => console.error(err));
+  }, []);
 
   const handleSelecionar = (bolao) => {
-    if (bolaoAtivo?.id === bolao.id) return;
-    setSelecionado((prev) => prev?.id === bolao.id ? null : bolao);
+    if (ativo?.id === bolao.id) return;
+    setSelecionado(bolao);
   };
 
-  const handleAtivar = () => {
+  // 🔥 ATIVAR PARTIDA
+  const handleAtivar = async () => {
     if (!selecionado) return;
-    setConfirmando(true);
-    setTimeout(() => {
-      setBolaoAtivo(selecionado);
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_URL}/${selecionado.id}/ativar`, {
+        method: "PATCH"
+      });
+
+      const data = await res.json();
+
+      setAtivo(data);
       setSelecionado(null);
-      setConfirmando(false);
-      navigate("/");
-    }, 700);
+
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao ativar partida");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCancelar = () => {
-    setBolaoAtivo(null);
-    setSelecionado(null);
+  // 🔥 CANCELAR ATIVO
+  const handleCancelar = async () => {
+    try {
+      await fetch(`${API_URL}/cancelar-ativo`, {
+        method: "PATCH"
+      });
+
+      setAtivo(null);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
 
-      {/* ── HEADER ─────────────────────────────────────────────────────────── */}
-      <header className="fixed top-0 inset-x-0 z-50 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center shadow-md shadow-red-950/50">
-              <Shield size={18} className="text-white" />
-            </div>
-            <div className="leading-none">
-              <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest hidden sm:block">Sistema de</p>
-              <h1 className="text-white font-black text-base tracking-tight">
-                Bolão <span className="text-red-500">Mengão</span>
-              </h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-4 py-1.5 rounded-full">
-            <Zap size={13} className="text-red-500" />
-            <span className="text-xs font-semibold text-zinc-400 tracking-widest uppercase">Ativar Bolão</span>
-          </div>
+      {/* HEADER */}
+      <header className="fixed top-0 inset-x-0 bg-zinc-950 border-b border-zinc-800">
+        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
+          <h1 className="font-black">
+            Bolão <span className="text-red-500">Mengão</span>
+          </h1>
+
+          <button onClick={() => navigate("/")} className="text-sm text-zinc-400">
+            <ArrowLeft size={14} /> Voltar
+          </button>
         </div>
       </header>
 
-      {/* ── MAIN ────────────────────────────────────────────────────────────── */}
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 pt-24 pb-20 space-y-6">
+      {/* MAIN */}
+      <main className="max-w-3xl mx-auto px-4 pt-24 pb-20 space-y-6">
 
-        {/* Banner bolão ativo */}
-        {bolaoAtivo && (
-          <div className="flex items-center justify-between gap-4 bg-red-950/25 border border-red-500/40 rounded-2xl px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-red-400 mb-0.5">Bolão em andamento</p>
-                <p className="text-white font-black text-base leading-tight">{bolaoAtivo.jogo}</p>
-              </div>
+        {/* ATIVO */}
+        {ativo && (
+          <div className="bg-red-950/20 border border-red-500 p-4 rounded-xl flex justify-between">
+            <div>
+              <p className="text-xs text-red-400">Ativo</p>
+              <p className="font-bold">
+                {ativo.timeCasa} × {ativo.timeFora}
+              </p>
             </div>
-            <button
-              onClick={handleCancelar}
-              className="flex items-center gap-1.5 text-xs font-semibold text-zinc-400 hover:text-red-400 bg-zinc-900 hover:bg-red-950/30 border border-zinc-700 hover:border-red-500/40 px-3 py-1.5 rounded-xl transition-all duration-200 flex-shrink-0"
-              aria-label="Cancelar bolão ativo"
-            >
-              <XCircle size={13} />
-              Cancelar
+
+            <button onClick={handleCancelar} className="text-red-400">
+              <XCircle size={18} />
             </button>
           </div>
         )}
 
-        {/* Título seção */}
-        <div>
-          <h2 className="text-sm font-black text-zinc-400 uppercase tracking-widest mb-1">
-            Selecione um Bolão
-          </h2>
-          <p className="text-xs text-zinc-600">
-            {selecionado ? `"${selecionado.jogo}" selecionado` : "Escolha um jogo para ativar"}
-          </p>
-        </div>
-
-        {/* Lista de bolões */}
-        <div className="space-y-3" role="listbox" aria-label="Lista de bolões disponíveis">
-          {boloesMock.map((b) => (
+        {/* LISTA */}
+        <div className="space-y-3">
+          {partidas.map((p) => (
             <BolaoCard
-              key={b.id}
-              bolao={b}
+              key={p.id}
+              bolao={p}
               selecionado={selecionado}
-              ativo={bolaoAtivo}
-              onClick={() => handleSelecionar(b)}
+              ativo={ativo}
+              onClick={() => handleSelecionar(p)}
             />
           ))}
         </div>
 
-        {/* Ações */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-2">
-          <button
-            type="button"
-            onClick={handleAtivar}
-            disabled={!selecionado || confirmando}
-            className={`
-              flex-1 flex items-center justify-center gap-2 font-bold text-sm py-3.5 rounded-2xl
-              transition-all duration-200 border outline-none
-              focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950
-              ${selecionado && !confirmando
-                ? "bg-red-600 hover:bg-red-700 text-white border-red-500/50 hover:border-red-400 shadow-lg shadow-red-950/30 cursor-pointer active:scale-[0.98]"
-                : confirmando
-                ? "bg-red-700 text-white border-red-600 cursor-wait"
-                : "bg-zinc-800 text-zinc-600 border-zinc-700 cursor-not-allowed"
-              }
-            `}
-          >
-            {confirmando ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Ativando...
-              </>
-            ) : (
-              <>
-                <Zap size={16} />
-                {selecionado ? `Ativar — ${selecionado.jogo}` : "Selecione um bolão"}
-              </>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="sm:w-auto flex items-center justify-center gap-1.5 text-sm font-semibold text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 px-6 py-3.5 rounded-2xl transition-all duration-200"
-          >
-            <ArrowLeft size={15} />
-            Voltar
-          </button>
-        </div>
+        {/* BOTÃO */}
+        <button
+          onClick={handleAtivar}
+          disabled={!selecionado || loading}
+          className="w-full py-3 bg-red-600 rounded-xl font-bold"
+        >
+          {loading ? "Ativando..." : "Ativar Partida"}
+        </button>
 
       </main>
-
-      {/* ── FOOTER ── */}
-      <footer className="border-t border-zinc-900 py-8 text-center">
-        <p className="text-xs text-zinc-700">
-          Bolão Mengão &copy; {new Date().getFullYear()} — Nação Rubro-Negra
-        </p>
-      </footer>
-
     </div>
   );
 }

@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { UserPlus, User, Phone, ArrowLeft, CheckCircle, Shield } from "lucide-react";
+import { UserPlus, User, Phone, ArrowLeft, CheckCircle } from "lucide-react";
+
+// 🔥 URL base da API
+const API_URL = "http://localhost:8080/api/participantes";
 
 // ─── Campo reutilizável ───────────────────────────────────────────────────────
 function Field({ label, icon: Icon, children }) {
@@ -23,6 +26,7 @@ const inputClass = `w-full bg-zinc-800 border border-zinc-700 text-white placeho
 function Cadastro() {
   const [form, setForm] = useState({ nome: "", sobrenome: "", telefone: "" });
   const [enviado, setEnviado] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const set = (campo) => (e) =>
     setForm((prev) => ({ ...prev, [campo]: e.target.value }));
@@ -35,14 +39,48 @@ function Cadastro() {
     setForm((prev) => ({ ...prev, telefone: v }));
   };
 
-  const handleSubmit = (e) => {
+  // 🔥 INTEGRAÇÃO COM API
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Participante cadastrado:", form);
-    setEnviado(true);
-    setTimeout(() => setEnviado(false), 3000);
+    setLoading(true);
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nome: form.nome,
+          sobrenome: form.sobrenome,
+          telefone: form.telefone
+        }),
+      });
+
+      if (!response.ok) {
+        const erro = await response.json();
+        console.error("Erro backend:", erro);
+        throw new Error("Erro ao cadastrar participante");
+      }
+
+      const data = await response.json();
+      console.log("Participante criado:", data);
+
+      setEnviado(true);
+      setForm({ nome: "", sobrenome: "", telefone: "" });
+
+      setTimeout(() => setEnviado(false), 3000);
+
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao cadastrar participante");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const nomeCompleto = [form.nome, form.sobrenome].filter(Boolean).join(" ") || "Participante";
+  const nomeCompletoPreview =
+    [form.nome, form.sobrenome].filter(Boolean).join(" ") || "Participante";
 
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4 py-12">
@@ -60,13 +98,13 @@ function Cadastro() {
         </div>
 
         {/* ── Preview ── */}
-        <div className="bg-black border border-zinc-800 rounded-xl px-6 py-4 transition-all duration-300">
+        <div className="bg-black border border-zinc-800 rounded-xl px-6 py-4">
           <div className="flex items-center justify-center gap-2 text-zinc-600 mb-2">
             <User size={13} />
             <p className="text-xs uppercase tracking-widest font-semibold">Novo participante</p>
           </div>
-          <p className="text-xl font-black text-white text-center leading-tight transition-all duration-300">
-            {nomeCompleto}
+          <p className="text-xl font-black text-white text-center">
+            {nomeCompletoPreview}
           </p>
           {form.telefone && (
             <div className="flex items-center justify-center gap-1.5 mt-1.5">
@@ -81,7 +119,6 @@ function Cadastro() {
           onSubmit={handleSubmit}
           className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-5 shadow-xl"
         >
-          {/* Nome + Sobrenome */}
           <div className="grid grid-cols-2 gap-4">
             <Field label="Nome" icon={User}>
               <input
@@ -105,7 +142,6 @@ function Cadastro() {
             </Field>
           </div>
 
-          {/* Telefone */}
           <Field label="Telefone" icon={Phone}>
             <input
               type="tel"
@@ -117,20 +153,21 @@ function Cadastro() {
             />
           </Field>
 
-          {/* Botão */}
           <button
             type="submit"
-            className={`w-full font-bold text-sm py-3 rounded-xl mt-2
-              transition-all duration-200 border
+            disabled={loading}
+            className={`w-full font-bold text-sm py-3 rounded-xl mt-2 transition-all duration-200 border
               ${enviado
-                ? "bg-green-700 border-green-600 text-white cursor-default"
-                : "bg-red-600 hover:bg-red-700 active:bg-red-800 border-red-500/50 hover:border-red-400 text-white hover:shadow-lg hover:shadow-red-950/50"
+                ? "bg-green-700 border-green-600 text-white"
+                : "bg-red-600 hover:bg-red-700 border-red-500/50 text-white"
               }`}
           >
             <span className="flex items-center justify-center gap-2">
               {enviado
                 ? <><CheckCircle size={16} /> Cadastrado com sucesso</>
-                : <><UserPlus size={16} /> Cadastrar Participante</>
+                : loading
+                  ? "Cadastrando..."
+                  : <><UserPlus size={16} /> Cadastrar Participante</>
               }
             </span>
           </button>
@@ -139,7 +176,7 @@ function Cadastro() {
         {/* Voltar */}
         <a
           href="/"
-          className="flex items-center justify-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-400 transition-colors duration-200"
+          className="flex items-center justify-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-400"
         >
           <ArrowLeft size={13} />
           Voltar para o Dashboard
