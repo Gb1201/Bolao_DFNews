@@ -13,6 +13,14 @@ function ParticipanteModal({ editando, onClose, onSave }) {
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const maskTelefone = (v) => {
+    const digits = v.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 2)  return `(${digits}`;
+    if (digits.length <= 6)  return `(${digits.slice(0,2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) return `(${digits.slice(0,2)}) ${digits.slice(2,6)}-${digits.slice(6)}`;
+    return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try { await onSave(form); }
@@ -47,7 +55,12 @@ function ParticipanteModal({ editando, onClose, onSave }) {
         </div>
         <div className="field">
           <label className="field-label">Telefone</label>
-          <input className="input" placeholder="(21) 99999-0000" value={form.telefone} onChange={(e) => set("telefone", e.target.value)} />
+          <input
+            className="input"
+            placeholder="(21) 99999-0000"
+            value={form.telefone}
+            onChange={(e) => set("telefone", maskTelefone(e.target.value))}
+          />
         </div>
       </div>
     </Modal>
